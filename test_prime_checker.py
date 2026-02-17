@@ -3,7 +3,7 @@ import sys
 
 import pytest
 
-from prime_checker import is_prime, format_result, interactive_mode
+from prime_checker import is_prime, format_result, parse_input, interactive_mode
 
 
 # --- is_prime() unit tests ---
@@ -22,6 +22,42 @@ def test_is_prime(n, expected):
     assert is_prime(n) == expected
 
 
+# --- parse_input() tests ---
+
+@pytest.mark.parametrize("text, expected_n", [
+    ("7", 7),
+    ("-5", -5),
+    ("0", 0),
+])
+def test_parse_input_numeric(text, expected_n):
+    n, label = parse_input(text)
+    assert n == expected_n
+    assert label == str(expected_n)
+
+
+@pytest.mark.parametrize("text, expected_n", [
+    ("two", 2),
+    ("three", 3),
+    ("seventeen", 17),
+    ("four", 4),
+    ("twenty", 20),
+    ("thirty one", 31),
+    ("minus five", -5),
+    ("TWO", 2),
+    ("Two", 2),
+])
+def test_parse_input_words(text, expected_n):
+    n, label = parse_input(text)
+    assert n == expected_n
+    assert label == text.strip()
+
+
+@pytest.mark.parametrize("text", ["fox", "hello", "abc"])
+def test_parse_input_invalid(text):
+    with pytest.raises(ValueError):
+        parse_input(text)
+
+
 # --- format_result() tests ---
 
 def test_format_result_prime():
@@ -30,6 +66,11 @@ def test_format_result_prime():
 
 def test_format_result_not_prime():
     assert format_result(10) == "10 is NOT a prime integer"
+
+
+def test_format_result_with_label():
+    assert format_result(2, "two") == "two is a prime integer"
+    assert format_result(4, "four") == "four is NOT a prime integer"
 
 
 # --- CLI tests ---
@@ -64,6 +105,36 @@ def test_cli_invalid_input():
     assert result.stderr.strip() != ""
 
 
+def test_cli_word_prime():
+    result = subprocess.run(
+        [sys.executable, "prime_checker.py", "two"],
+        capture_output=True, text=True,
+        cwd="/app",
+    )
+    assert result.returncode == 0
+    assert result.stdout.strip() == "two is a prime integer"
+
+
+def test_cli_word_not_prime():
+    result = subprocess.run(
+        [sys.executable, "prime_checker.py", "twenty"],
+        capture_output=True, text=True,
+        cwd="/app",
+    )
+    assert result.returncode == 0
+    assert result.stdout.strip() == "twenty is NOT a prime integer"
+
+
+def test_cli_word_invalid():
+    result = subprocess.run(
+        [sys.executable, "prime_checker.py", "fox"],
+        capture_output=True, text=True,
+        cwd="/app",
+    )
+    assert result.returncode != 0
+    assert result.stderr.strip() != ""
+
+
 # --- interactive_mode() unit tests ---
 
 def test_interactive_prime_then_quit(monkeypatch, capsys):
@@ -89,8 +160,17 @@ def test_interactive_invalid_then_valid_then_quit(monkeypatch, capsys):
     monkeypatch.setattr("builtins.input", lambda prompt="": next(inputs))
     interactive_mode()
     output = capsys.readouterr().out
-    assert "Error: 'abc' is not a valid integer. Try again." in output
+    assert "Error:" in output
     assert "7 is a prime integer" in output
+    assert "Goodbye!" in output
+
+
+def test_interactive_word_input_then_quit(monkeypatch, capsys):
+    inputs = iter(["two", "quit"])
+    monkeypatch.setattr("builtins.input", lambda prompt="": next(inputs))
+    interactive_mode()
+    output = capsys.readouterr().out
+    assert "two is a prime integer" in output
     assert "Goodbye!" in output
 
 
