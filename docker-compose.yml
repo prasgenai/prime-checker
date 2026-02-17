@@ -1,0 +1,5 @@
+services:
+  prime-checker:
+    build: .
+    stdin_open: true
+    tty: true

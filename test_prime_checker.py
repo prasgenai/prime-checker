@@ -1,10 +1,7 @@
-import os
 import subprocess
 import sys
 
 import pytest
-
-_DIR = os.path.dirname(os.path.abspath(__file__))
 
 from prime_checker import is_prime, format_result, interactive_mode
 
@@ -41,7 +38,7 @@ def test_cli_prime():
     result = subprocess.run(
         [sys.executable, "prime_checker.py", "7"],
         capture_output=True, text=True,
-        cwd=_DIR,
+        cwd="/app",
     )
     assert result.returncode == 0
     assert result.stdout.strip() == "7 is a prime integer"
@@ -51,7 +48,7 @@ def test_cli_not_prime():
     result = subprocess.run(
         [sys.executable, "prime_checker.py", "10"],
         capture_output=True, text=True,
-        cwd=_DIR,
+        cwd="/app",
     )
     assert result.returncode == 0
     assert result.stdout.strip() == "10 is NOT a prime integer"
@@ -61,7 +58,7 @@ def test_cli_invalid_input():
     result = subprocess.run(
         [sys.executable, "prime_checker.py", "abc"],
         capture_output=True, text=True,
-        cwd=_DIR,
+        cwd="/app",
     )
     assert result.returncode != 0
     assert result.stderr.strip() != ""
@@ -122,7 +119,7 @@ def test_cli_interactive_mode():
         [sys.executable, "prime_checker.py"],
         input="7\nquit\n",
         capture_output=True, text=True,
-        cwd=_DIR,
+        cwd="/app",
     )
     assert result.returncode == 0
     assert "7 is a prime integer" in result.stdout
